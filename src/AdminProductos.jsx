@@ -60,6 +60,8 @@ function AdminProductos() {
   const [idProductoEditando, setIdProductoEditando] = useState(null);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [productoAEliminar, setProductoAEliminar] = useState(null);
+  const [imagen, setImagen] = useState(null);
+  const [previewUrl, setPreviewUrl] = useState('');
 
   // Cargar productos
   useEffect(() => {
@@ -96,20 +98,36 @@ function AdminProductos() {
     setIdProductoEditando(null);
     setMensaje('');
     setError(false);
+    setImagen(null);
+    setPreviewUrl('');
+  };
+
+  const handleImageChange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      setImagen(file);
+      // Crear preview
+      const url = URL.createObjectURL(file);
+      setPreviewUrl(url);
+    }
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    const productoData = {
-      nombre,
-      descripcion,
-      tipo_producto: tipoProducto,
-      marca,
-      codigo,
-      precio: parseFloat(precio),
-      stock: parseInt(stock)
-    };
+    const formData = new FormData();
+    formData.append('nombre', nombre);
+    formData.append('descripcion', descripcion);
+    formData.append('tipo_producto', tipoProducto);
+    formData.append('marca', marca);
+    formData.append('codigo', codigo);
+    formData.append('precio', parseFloat(precio));
+    formData.append('stock', parseInt(stock));
+    
+    // Agregar imagen si hay una
+    if (imagen) {
+      formData.append('imagen', imagen);
+    }
 
     const url = modoEditar
       ? `http://localhost:8000/api/productos/${idProductoEditando}/`
@@ -120,8 +138,7 @@ function AdminProductos() {
     try {
       const response = await fetch(url, {
         method: metodo,
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(productoData)
+        body: formData
       });
 
       const data = await response.json();
@@ -332,6 +349,43 @@ function AdminProductos() {
                   }}
                 />
               </Grid>
+
+              <Grid item xs={12} md={6}>
+                <Button
+                  variant="outlined"
+                  component="label"
+                  fullWidth
+                  sx={{ height: 56 }}
+                >
+                  Subir Imagen
+                  <input
+                    type="file"
+                    accept="image/*"
+                    hidden
+                    onChange={handleImageChange}
+                  />
+                </Button>
+              </Grid>
+
+              {previewUrl && (
+                <Grid item xs={12}>
+                  <Box sx={{ textAlign: 'center' }}>
+                    <Typography variant="body2" gutterBottom>
+                      Vista previa:
+                    </Typography>
+                    <img
+                      src={previewUrl}
+                      alt="Preview"
+                      style={{
+                        maxWidth: '100%',
+                        maxHeight: 200,
+                        objectFit: 'cover',
+                        borderRadius: 8
+                      }}
+                    />
+                  </Box>
+                </Grid>
+              )}
 
               <Grid item xs={12}>
                 <Box sx={{ display: 'flex', gap: 2 }}>

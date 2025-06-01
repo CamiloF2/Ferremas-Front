@@ -18,9 +18,7 @@ import {
 import {
   AttachMoney,
   Inventory,
-  Category,
-  Refresh
-} from '@mui/icons-material';
+  Category} from '@mui/icons-material';
 import { toast } from 'react-toastify';
 
 function Productos() {
@@ -38,8 +36,6 @@ function Productos() {
     try {
       const response = await fetch('http://localhost:8000/api/productos/');
       const data = await response.json();
-      
-      console.log("Respuesta del backend:", data);
 
       if (Array.isArray(data)) {
         setProductos(data);
@@ -141,6 +137,21 @@ function Productos() {
               }}
               onClick={() => navigate(`/producto/${producto.id}`)}
             >
+              <Box
+                component="img"
+                sx={{
+                  height: 200,
+                  width: '100%',
+                  objectFit: 'cover',
+                  backgroundColor: 'grey.100'
+                }}
+                src={producto.imagen_url || '/media/productos/default.jpg'}
+                alt={producto.nombre}
+                onError={(e) => {
+                  e.target.src = '/media/productos/default.jpg';
+                }}
+              />
+              
               <CardContent sx={{ flexGrow: 1 }}>
                 <Typography gutterBottom variant="h6" component="h2">
                   {producto.nombre}

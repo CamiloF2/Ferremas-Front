@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   Container,
@@ -38,6 +38,7 @@ function Carrito() {
     getTotal, 
     getItemCount 
   } = useCart();
+  const [loading, setLoading] = useState(false);
 
   const handleVolver = () => {
     navigate('/productos');
@@ -86,9 +87,79 @@ function Carrito() {
     }
   };
 
+  const procesarPago = async () => {
+    setLoading(true);
+    
+    try {
+      // Preparar datos para enviar al backend
+      const orderData = {
+        items: cart.map(item => ({
+          producto_id: item.id,
+          cantidad: item.cantidad,
+          precio_unitario: item.precio
+        })),
+        total: getTotal()
+      };
+
+      // Llamada al backend para procesar el pago
+      const response = await fetch('http://localhost:8000/api/procesar-pago/', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(orderData)
+      });
+
+      const result = await response.json();
+
+      if (response.ok) {
+        // Éxito - mostrar confirmación
+        const orderConfirmation = {
+          orderId: result.order_id || Date.now(),
+          fecha: new Date().toLocaleDateString('es-ES'),
+          items: cart,
+          total: getTotal()
+        };
+
+        // Limpiar carrito
+        clearCart();
+        
+        // Toast de éxito
+        toast.success('🎉 ¡Pago procesado exitosamente!');
+        
+        // Navegar a página de confirmación
+        navigate('/confirmacion-pago', { 
+          state: { orderData: orderConfirmation } 
+        });
+        
+      } else {
+        // Error del backend
+        toast.error(result.error || 'Error al procesar el pago');
+      }
+      
+    } catch (error) {
+      console.error('Error al procesar pago:', error);
+      toast.error('Error de conexión al procesar el pago');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const handleCheckout = () => {
-    // Aquí iría la lógica de checkout
-    toast.success('🎉 ¡Próximamente funcionalidad de pago!');
+    if (cart.length === 0) {
+      toast.warn('Tu carrito está vacío');
+      return;
+    }
+
+    // Validar stock antes del pago
+    const itemsSinStock = cart.filter(item => item.cantidad > item.stock);
+    
+    if (itemsSinStock.length > 0) {
+      toast.error(`Sin stock suficiente para: ${itemsSinStock.map(item => item.nombre).join(', ')}`);
+      return;
+    }
+
+    procesarPago();
   };
 
   return (
@@ -265,9 +336,10 @@ function Carrito() {
                   size="large"
                   startIcon={<AttachMoney />}
                   onClick={handleCheckout}
+                  disabled={loading || cart.length === 0}
                   sx={{ py: 1.5 }}
                 >
-                  Proceder al Pago
+                  {loading ? 'Procesando...' : 'Proceder al Pago'}
                 </Button>
 
                 <Typography 

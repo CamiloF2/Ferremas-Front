@@ -15,13 +15,11 @@ import {
   CircularProgress,
   Alert,
   Divider,
-  Paper,
   Badge,
   TextField
 } from '@mui/material';
 import {
   ArrowBack,
-  AttachMoney,
   Inventory,
   Category,
   Business,
@@ -46,6 +44,7 @@ function DetalleProducto() {
 
   useEffect(() => {
     cargarProducto();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id]);
 
   const cargarProducto = async () => {
@@ -186,23 +185,23 @@ function DetalleProducto() {
         </Button>
 
         <Grid container spacing={4}>
-          {/* Imagen del producto (placeholder por ahora) */}
+          {/* Imagen del producto */}
           <Grid item xs={12} md={6}>
-            <Paper 
-              elevation={3}
-              sx={{ 
+            <Box
+              component="img"
+              sx={{
+                width: '100%',
                 height: 400,
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                backgroundColor: 'grey.100',
-                borderRadius: 2
+                objectFit: 'cover',
+                borderRadius: 2,
+                boxShadow: 3
               }}
-            >
-              <Typography variant="h3" color="text.secondary">
-                📦
-              </Typography>
-            </Paper>
+              src={producto.imagen_url || '/media/productos/default.jpg'}
+              alt={producto.nombre}
+              onError={(e) => {
+                e.target.src = '/media/productos/default.jpg';
+              }}
+            />
           </Grid>
 
           {/* Información del producto */}

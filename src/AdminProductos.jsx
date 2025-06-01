@@ -290,9 +290,9 @@ function AdminProductos() {
                     label="Tipo de Producto"
                     onChange={(e) => setTipoProducto(e.target.value)}
                   >
-                    <MenuItem value="herramientas manuales">Herramientas Manuales</MenuItem>
-                    <MenuItem value="materiales basicos">Materiales Básicos</MenuItem>
-                    <MenuItem value="equipos de seguridad">Equipos de Seguridad</MenuItem>
+                    <MenuItem value="Herramientas Manuales">Herramientas Manuales</MenuItem>
+                    <MenuItem value="Materiales Básicos">Materiales Básicos</MenuItem>
+                    <MenuItem value="Equipos de Seguridad">Equipos de Seguridad</MenuItem>
                   </Select>
                 </FormControl>
               </Grid>

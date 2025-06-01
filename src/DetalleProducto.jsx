@@ -100,6 +100,13 @@ function DetalleProducto() {
     }
   };
 
+  // Función helper para formatear precios
+  const formatPrice = (price) => {
+    return Math.round(parseFloat(price))
+      .toString()
+      .replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+  };
+
   if (loading) {
     return (
       <>
@@ -221,7 +228,7 @@ function DetalleProducto() {
               </Box>
 
               <Typography variant="h3" color="primary" sx={{ mb: 3 }}>
-                ${producto.precio?.toLocaleString()}
+                ${formatPrice(producto.precio)}
               </Typography>
 
               <Box sx={{ mb: 3 }}>

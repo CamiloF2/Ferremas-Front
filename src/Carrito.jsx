@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   Container,
@@ -162,6 +162,13 @@ function Carrito() {
     procesarPago();
   };
 
+  // Función helper para formatear precios
+  const formatPrice = (price) => {
+    return Math.round(parseFloat(price))
+      .toString()
+      .replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+  };
+
   return (
     <>
       <AppBar position="static">
@@ -226,7 +233,7 @@ function Carrito() {
                           Código: {item.codigo}
                         </Typography>
                         <Typography variant="body1" color="primary" sx={{ mt: 1 }}>
-                          ${item.precio.toLocaleString()} c/u
+                          ${formatPrice(item.precio)} c/u
                         </Typography>
                       </Grid>
 
@@ -271,7 +278,7 @@ function Carrito() {
                       <Grid item xs={12} sm={3}>
                         <Box sx={{ textAlign: 'right' }}>
                           <Typography variant="h6" color="primary" gutterBottom>
-                            ${(item.precio * item.cantidad).toLocaleString()}
+                            ${formatPrice(item.precio * item.cantidad)}
                           </Typography>
                           <IconButton 
                             onClick={() => handleRemoveItem(item.id, item.nombre)}
@@ -312,7 +319,7 @@ function Carrito() {
                 <Box sx={{ mb: 2 }}>
                   <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
                     <Typography>Productos ({getItemCount()})</Typography>
-                    <Typography>${getTotal().toLocaleString()}</Typography>
+                    <Typography>${formatPrice(getTotal())}</Typography>
                   </Box>
                   
                   <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
@@ -326,7 +333,7 @@ function Carrito() {
                 <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 3 }}>
                   <Typography variant="h6">Total</Typography>
                   <Typography variant="h6" color="primary">
-                    ${getTotal().toLocaleString()}
+                    ${formatPrice(getTotal())}
                   </Typography>
                 </Box>
 

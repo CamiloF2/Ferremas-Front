@@ -29,6 +29,12 @@ function Productos() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
+  const formatPrice = (price) => {
+    return Math.round(parseFloat(price))
+      .toString()
+      .replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+  };
+
   const cargarProductos = async () => {
     setLoading(true);
     setError('');
@@ -126,10 +132,12 @@ function Productos() {
             <Card 
               sx={{ 
                 height: '100%',
+                width: 320,
                 display: 'flex',
                 flexDirection: 'column',
                 transition: 'transform 0.2s',
                 cursor: 'pointer',
+                margin: '0 auto',
                 '&:hover': {
                   transform: 'translateY(-4px)',
                   boxShadow: 4
@@ -142,8 +150,9 @@ function Productos() {
                 sx={{
                   height: 200,
                   width: '100%',
-                  objectFit: 'cover',
-                  backgroundColor: 'grey.100'
+                  objectFit: 'contain',
+                  backgroundColor: 'white',
+                  border: '1px solid #e0e0e0'
                 }}
                 src={producto.imagen_url || '/media/productos/default.jpg'}
                 alt={producto.nombre}
@@ -174,7 +183,7 @@ function Productos() {
                 <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
                   <AttachMoney color="primary" />
                   <Typography variant="h6" color="primary">
-                    ${producto.precio?.toLocaleString()}
+                    {formatPrice(producto.precio)}
                   </Typography>
                 </Box>
 

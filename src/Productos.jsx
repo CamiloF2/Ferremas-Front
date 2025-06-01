@@ -13,17 +13,12 @@ import {
   Box,
   Chip,
   CircularProgress,
-  Alert,
-  AppBar,
-  Toolbar,
-  Button,
-  IconButton
+  Alert
 } from '@mui/material';
 import {
   AttachMoney,
   Inventory,
   Category,
-  Logout,
   Refresh
 } from '@mui/icons-material';
 import { toast } from 'react-toastify';
@@ -75,12 +70,6 @@ function Productos() {
     ? productos.filter(p => p.tipo_producto === categoriaSeleccionada)
     : productos;
 
-  const handleLogout = () => {
-    localStorage.removeItem('usuario');
-    toast.success('Sesión cerrada correctamente');
-    navigate('/');
-  };
-
   const getTipoColor = (tipo) => {
     switch(tipo) {
       case 'herramientas manuales': return 'primary';
@@ -91,142 +80,126 @@ function Productos() {
   };
 
   return (
-    <>
-      <AppBar position="static">
-        <Toolbar>
-          <Typography variant="h6" component="div" sx={{ flexGrow: 1 }}>
-            Ferremas - Catálogo de Productos
-          </Typography>
-          <IconButton color="inherit" onClick={cargarProductos}>
-            <Refresh />
-          </IconButton>
-          <Button color="inherit" onClick={handleLogout} startIcon={<Logout />}>
-            Cerrar Sesión
-          </Button>
-        </Toolbar>
-      </AppBar>
-
-      <Container maxWidth="lg" sx={{ mt: 4, mb: 4 }}>
-        <Box sx={{ mb: 4 }}>
-          <Typography variant="h4" component="h1" gutterBottom>
-            Catálogo de Productos
-          </Typography>
-          
-          <FormControl sx={{ minWidth: 200 }}>
-            <InputLabel id="categoria-select-label">Filtrar por categoría</InputLabel>
-            <Select
-              labelId="categoria-select-label"
-              value={categoriaSeleccionada}
-              label="Filtrar por categoría"
-              onChange={(e) => setCategoriaSeleccionada(e.target.value)}
-            >
-              <MenuItem value="">
-                <em>Todas las categorías</em>
+    <Container maxWidth="lg" sx={{ mt: 4, mb: 4 }}>
+      <Box sx={{ mb: 4, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <Typography variant="h4" component="h1">
+          Catálogo de Productos
+        </Typography>
+        
+        <FormControl sx={{ minWidth: 200 }}>
+          <InputLabel id="categoria-select-label">Filtrar por categoría</InputLabel>
+          <Select
+            labelId="categoria-select-label"
+            value={categoriaSeleccionada}
+            label="Filtrar por categoría"
+            onChange={(e) => setCategoriaSeleccionada(e.target.value)}
+          >
+            <MenuItem value="">
+              <em>Todas las categorías</em>
+            </MenuItem>
+            {categorias.map((cat, index) => (
+              <MenuItem key={index} value={cat}>
+                {cat.charAt(0).toUpperCase() + cat.slice(1)}
               </MenuItem>
-              {categorias.map((cat, index) => (
-                <MenuItem key={index} value={cat}>
-                  {cat.charAt(0).toUpperCase() + cat.slice(1)}
-                </MenuItem>
-              ))}
-            </Select>
-          </FormControl>
+            ))}
+          </Select>
+        </FormControl>
+      </Box>
+
+      {loading && (
+        <Box display="flex" justifyContent="center" sx={{ my: 4 }}>
+          <CircularProgress />
         </Box>
+      )}
 
-        {loading && (
-          <Box display="flex" justifyContent="center" sx={{ my: 4 }}>
-            <CircularProgress />
-          </Box>
-        )}
+      {error && (
+        <Alert severity="error" sx={{ mb: 4 }}>
+          {error}
+        </Alert>
+      )}
 
-        {error && (
-          <Alert severity="error" sx={{ mb: 4 }}>
-            {error}
-          </Alert>
-        )}
+      {!loading && productosFiltrados.length === 0 && !error && (
+        <Alert severity="info">
+          No se encontraron productos en esta categoría.
+        </Alert>
+      )}
 
-        {!loading && productosFiltrados.length === 0 && !error && (
-          <Alert severity="info">
-            No se encontraron productos en esta categoría.
-          </Alert>
-        )}
+      <Grid container spacing={3}>
+        {productosFiltrados.map((producto) => (
+          <Grid item xs={12} sm={6} md={4} key={producto.id}>
+            <Card 
+              sx={{ 
+                height: '100%',
+                display: 'flex',
+                flexDirection: 'column',
+                transition: 'transform 0.2s',
+                cursor: 'pointer',
+                '&:hover': {
+                  transform: 'translateY(-4px)',
+                  boxShadow: 4
+                }
+              }}
+              onClick={() => navigate(`/producto/${producto.id}`)}
+            >
+              <CardContent sx={{ flexGrow: 1 }}>
+                <Typography gutterBottom variant="h6" component="h2">
+                  {producto.nombre}
+                </Typography>
+                
+                <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+                  {producto.descripcion}
+                </Typography>
 
-        <Grid container spacing={3}>
-          {productosFiltrados.map((producto) => (
-            <Grid item xs={12} sm={6} md={4} key={producto.id}>
-              <Card 
-                sx={{ 
-                  height: '100%',
-                  display: 'flex',
-                  flexDirection: 'column',
-                  transition: 'transform 0.2s',
-                  cursor: 'pointer',
-                  '&:hover': {
-                    transform: 'translateY(-4px)',
-                    boxShadow: 4
-                  }
-                }}
-                onClick={() => navigate(`/producto/${producto.id}`)}
-              >
-                <CardContent sx={{ flexGrow: 1 }}>
-                  <Typography gutterBottom variant="h6" component="h2">
-                    {producto.nombre}
+                <Box sx={{ mb: 2 }}>
+                  <Chip 
+                    icon={<Category />}
+                    label={producto.tipo_producto}
+                    color={getTipoColor(producto.tipo_producto)}
+                    size="small"
+                    sx={{ mb: 1 }}
+                  />
+                </Box>
+
+                <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
+                  <AttachMoney color="primary" />
+                  <Typography variant="h6" color="primary">
+                    ${producto.precio?.toLocaleString()}
                   </Typography>
-                  
-                  <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-                    {producto.descripcion}
-                  </Typography>
+                </Box>
 
-                  <Box sx={{ mb: 2 }}>
-                    <Chip 
-                      icon={<Category />}
-                      label={producto.tipo_producto}
-                      color={getTipoColor(producto.tipo_producto)}
-                      size="small"
-                      sx={{ mb: 1 }}
-                    />
-                  </Box>
-
-                  <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
-                    <AttachMoney color="primary" />
-                    <Typography variant="h6" color="primary">
-                      ${producto.precio?.toLocaleString()}
-                    </Typography>
-                  </Box>
-
-                  <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
-                    <Inventory color="action" sx={{ mr: 1 }} />
-                    <Typography variant="body2" color="text.secondary">
-                      Stock: {producto.stock} unidades
-                    </Typography>
-                  </Box>
-
+                <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
+                  <Inventory color="action" sx={{ mr: 1 }} />
                   <Typography variant="body2" color="text.secondary">
-                    Marca: {producto.marca}
+                    Stock: {producto.stock} unidades
                   </Typography>
-                  
-                  <Typography variant="body2" color="text.secondary">
-                    Código: {producto.codigo}
-                  </Typography>
+                </Box>
 
-                  <Typography 
-                    variant="caption" 
-                    color="primary" 
-                    sx={{ 
-                      mt: 2, 
-                      display: 'block',
-                      textAlign: 'center',
-                      fontWeight: 'bold'
-                    }}
-                  >
-                    Click para ver detalles →
-                  </Typography>
-                </CardContent>
-              </Card>
-            </Grid>
-          ))}
-        </Grid>
-      </Container>
-    </>
+                <Typography variant="body2" color="text.secondary">
+                  Marca: {producto.marca}
+                </Typography>
+                
+                <Typography variant="body2" color="text.secondary">
+                  Código: {producto.codigo}
+                </Typography>
+
+                <Typography 
+                  variant="caption" 
+                  color="primary" 
+                  sx={{ 
+                    mt: 2, 
+                    display: 'block',
+                    textAlign: 'center',
+                    fontWeight: 'bold'
+                  }}
+                >
+                  Click para ver detalles →
+                </Typography>
+              </CardContent>
+            </Card>
+          </Grid>
+        ))}
+      </Grid>
+    </Container>
   );
 }
 

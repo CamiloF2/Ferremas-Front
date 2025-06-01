@@ -15,7 +15,9 @@ import {
   CircularProgress,
   Alert,
   Divider,
-  Paper
+  Paper,
+  Badge,
+  TextField
 } from '@mui/material';
 import {
   ArrowBack,
@@ -26,16 +28,21 @@ import {
   Code,
   Description,
   ShoppingCart,
-  Logout
+  Logout,
+  Remove,
+  Add
 } from '@mui/icons-material';
 import { toast } from 'react-toastify';
+import { useCart } from './context/CartContext';
 
 function DetalleProducto() {
   const { id } = useParams();
   const navigate = useNavigate();
+  const { addToCart, getItemCount, isInCart, getItemQuantity } = useCart();
   const [producto, setProducto] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [cantidad, setCantidad] = useState(1);
 
   useEffect(() => {
     cargarProducto();
@@ -76,8 +83,13 @@ function DetalleProducto() {
   };
 
   const handleAgregarCarrito = () => {
-    // Funcionalidad del carrito para el futuro
-    toast.success(`🛒 "${producto.nombre}" agregado al carrito`);
+    if (cantidad > producto.stock) {
+      toast.error('No hay suficiente stock disponible');
+      return;
+    }
+    
+    addToCart(producto, cantidad);
+    toast.success(`🛒 ${cantidad} x "${producto.nombre}" agregado al carrito`);
   };
 
   const getTipoColor = (tipo) => {
@@ -152,6 +164,11 @@ function DetalleProducto() {
           <Typography variant="h6" component="div" sx={{ flexGrow: 1 }}>
             Ferremas - {producto.nombre}
           </Typography>
+          <IconButton color="inherit" onClick={() => navigate('/carrito')}>
+            <Badge badgeContent={getItemCount()} color="error">
+              <ShoppingCart />
+            </Badge>
+          </IconButton>
           <Button color="inherit" onClick={handleLogout} startIcon={<Logout />}>
             Cerrar Sesión
           </Button>
@@ -226,6 +243,42 @@ function DetalleProducto() {
                 </Typography>
               </Box>
 
+              <Box sx={{ mb: 3 }}>
+                <Typography variant="body1" gutterBottom>
+                  Cantidad:
+                </Typography>
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                  <IconButton 
+                    onClick={() => setCantidad(Math.max(1, cantidad - 1))}
+                    disabled={cantidad <= 1}
+                  >
+                    <Remove />
+                  </IconButton>
+                  
+                  <TextField
+                    size="small"
+                    value={cantidad}
+                    onChange={(e) => {
+                      const value = Math.max(1, Math.min(producto.stock, parseInt(e.target.value) || 1));
+                      setCantidad(value);
+                    }}
+                    inputProps={{ 
+                      min: 1, 
+                      max: producto.stock,
+                      style: { textAlign: 'center', width: '80px' }
+                    }}
+                    type="number"
+                  />
+                  
+                  <IconButton 
+                    onClick={() => setCantidad(Math.min(producto.stock, cantidad + 1))}
+                    disabled={cantidad >= producto.stock}
+                  >
+                    <Add />
+                  </IconButton>
+                </Box>
+              </Box>
+
               <Button
                 variant="contained"
                 size="large"
@@ -235,8 +288,17 @@ function DetalleProducto() {
                 sx={{ mb: 3, py: 1.5 }}
                 fullWidth
               >
-                {producto.stock > 0 ? 'Agregar al Carrito' : 'Sin Stock'}
+                {producto.stock > 0 
+                  ? `Agregar ${cantidad} al Carrito` 
+                  : 'Sin Stock'
+                }
               </Button>
+
+              {isInCart(producto.id) && (
+                <Alert severity="info" sx={{ mb: 2 }}>
+                  Ya tienes {getItemQuantity(producto.id)} de este producto en tu carrito
+                </Alert>
+              )}
 
               <Divider sx={{ my: 2 }} />
 

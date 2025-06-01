@@ -383,6 +383,7 @@ function AdminProductos() {
                   <TableRow>
                     <TableCell>ID</TableCell>
                     <TableCell>Nombre</TableCell>
+                    <TableCell>Descripción</TableCell>
                     <TableCell>
                       <Box sx={{ display: 'flex', alignItems: 'center' }}>
                         <Code sx={{ mr: 1, fontSize: 18 }} />
@@ -401,6 +402,7 @@ function AdminProductos() {
                     <TableRow key={producto.id}>
                       <TableCell>{producto.id}</TableCell>
                       <TableCell>{producto.nombre}</TableCell>
+                      <TableCell>{producto.descripcion}</TableCell>
                       <TableCell>
                         <Box sx={{ display: 'flex', alignItems: 'center' }}>
                           <Code sx={{ mr: 1, fontSize: 16, color: 'text.secondary' }} />

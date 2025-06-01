@@ -14,6 +14,7 @@ import 'react-toastify/dist/ReactToastify.css';
 import Login from './Login';
 import Productos from './Productos';
 import AdminProductos from './AdminProductos';
+import DetalleProducto from './DetalleProducto';
 
 const theme = createTheme({
   palette: {
@@ -38,6 +39,7 @@ function App() {
           <Route path="/" element={<Login />} />
           <Route path="/productos" element={<Productos />} />
           <Route path="/admin" element={<AdminProductos />} />
+          <Route path="/producto/:id" element={<DetalleProducto />} />
         </Routes>
         
         {/* Configuración global de Toastify */}

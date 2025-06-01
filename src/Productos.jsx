@@ -159,11 +159,13 @@ function Productos() {
                   display: 'flex',
                   flexDirection: 'column',
                   transition: 'transform 0.2s',
+                  cursor: 'pointer',
                   '&:hover': {
                     transform: 'translateY(-4px)',
                     boxShadow: 4
                   }
                 }}
+                onClick={() => navigate(`/producto/${producto.id}`)}
               >
                 <CardContent sx={{ flexGrow: 1 }}>
                   <Typography gutterBottom variant="h6" component="h2">
@@ -204,6 +206,19 @@ function Productos() {
                   
                   <Typography variant="body2" color="text.secondary">
                     Código: {producto.codigo}
+                  </Typography>
+
+                  <Typography 
+                    variant="caption" 
+                    color="primary" 
+                    sx={{ 
+                      mt: 2, 
+                      display: 'block',
+                      textAlign: 'center',
+                      fontWeight: 'bold'
+                    }}
+                  >
+                    Click para ver detalles →
                   </Typography>
                 </CardContent>
               </Card>

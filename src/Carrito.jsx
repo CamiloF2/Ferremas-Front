@@ -14,7 +14,8 @@ import {
   AppBar,
   Toolbar,
   TextField,
-  Paper
+  Paper,
+  CircularProgress
 } from '@mui/material';
 import {
   ArrowBack,
@@ -23,10 +24,12 @@ import {
   Delete,
   ShoppingCart,
   Logout,
-  AttachMoney
+  AttachMoney,
+  CreditCard
 } from '@mui/icons-material';
 import { useCart } from './context/CartContext';
 import { toast } from 'react-toastify';
+import { pagoService } from './services/api';
 
 function Carrito() {
   const navigate = useNavigate();
@@ -39,6 +42,7 @@ function Carrito() {
     getItemCount 
   } = useCart();
   const [loading, setLoading] = useState(false);
+  const [procesandoPago, setProcesandoPago] = useState(false);
 
   const handleVolver = () => {
     navigate('/productos');
@@ -87,61 +91,82 @@ function Carrito() {
     }
   };
 
-  const procesarPago = async () => {
-    setLoading(true);
+  // ✨ NUEVA FUNCIÓN: Procesar pago con Transbank (ARREGLADA)
+  const procesarPagoTransbank = async () => {
+    setProcesandoPago(true);
     
     try {
-      // Preparar datos para enviar al backend
-      const orderData = {
-        items: cart.map(item => ({
-          producto_id: item.id,
-          cantidad: item.cantidad,
-          precio_unitario: item.precio
-        })),
-        total: getTotal()
-      };
-
-      // Llamada al backend para procesar el pago
-      const response = await fetch('http://localhost:8000/api/procesar-pago/', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(orderData)
-      });
-
-      const result = await response.json();
-
-      if (response.ok) {
-        // Éxito - mostrar confirmación
-        const orderConfirmation = {
-          orderId: result.order_id || Date.now(),
-          fecha: new Date().toLocaleDateString('es-ES'),
-          items: cart,
-          total: getTotal()
-        };
-
-        // Limpiar carrito
-        clearCart();
-        
-        // Toast de éxito
-        toast.success('🎉 ¡Pago procesado exitosamente!');
-        
-        // Navegar a página de confirmación
-        navigate('/confirmacion-pago', { 
-          state: { orderData: orderConfirmation } 
-        });
-        
-      } else {
-        // Error del backend
-        toast.error(result.error || 'Error al procesar el pago');
+      // 🔍 DEBUG: Ver exactamente qué datos del usuario tenemos
+      const usuario = JSON.parse(localStorage.getItem('usuario') || '{}');
+      console.log('👤 DATOS COMPLETOS DEL USUARIO:', usuario);
+      console.log('📧 Email del usuario:', usuario.email);
+      console.log('👤 Nombre del usuario:', usuario.username || usuario.nombre || usuario.first_name);
+      
+      // 🔍 DEBUG: Verificar qué datos tenemos
+      console.log('🛒 Datos del carrito:', cart);
+      console.log('💰 Total:', getTotal());
+      console.log('📦 Items para enviar:', cart.map(item => ({
+        producto_id: item.id,
+        cantidad: item.cantidad,
+        precio_unitario: parseFloat(item.precio)
+      })));
+      
+      // Paso 1: Crear orden en Django
+      toast.info('📦 Creando orden de pago...');
+      const ordenResponse = await pagoService.crearOrden(cart, getTotal());
+      
+      console.log('📋 Respuesta crear orden:', ordenResponse);
+      
+      // ✅ ARREGLAR: Verificar el formato correcto de respuesta
+      if (!ordenResponse.orden) {  // Cambiar de "success" a "orden"
+        throw new Error(ordenResponse.error || 'Error al crear la orden');
       }
+
+      const ordenId = ordenResponse.orden.id;  // ✅ ARREGLAR: Usar ordenResponse.orden.id
+      
+      // Paso 2: Iniciar pago con Transbank
+      toast.info('💳 Iniciando pago con Transbank...');
+      const pagoResponse = await pagoService.iniciarPago(ordenId);
+      
+      console.log('💳 Respuesta iniciar pago:', pagoResponse);
+      
+      // ✅ ARREGLAR: Verificar formato correcto
+      if (!pagoResponse.url || !pagoResponse.token) {  // Verificar campos específicos
+        throw new Error(pagoResponse.error || 'Error al iniciar el pago');
+      }
+
+      // Paso 3: Redireccionar a Transbank usando POST form
+      const { token, url } = pagoResponse;
+      
+      if (!token || !url) {
+        throw new Error('Token o URL de Transbank no válidos');
+      }
+
+      // Guardar datos temporales para el retorno
+      localStorage.setItem('transbank_orden_id', ordenId);
+      localStorage.setItem('transbank_cart_backup', JSON.stringify(cart));
+      
+      toast.success('🚀 Redirigiendo a Transbank...');
+      
+      // Crear y enviar formulario POST a Transbank
+      const form = document.createElement('form');
+      form.method = 'POST';
+      form.action = url;
+      form.style.display = 'none';
+      
+      const tokenInput = document.createElement('input');
+      tokenInput.type = 'hidden';
+      tokenInput.name = 'token_ws';
+      tokenInput.value = token;
+      
+      form.appendChild(tokenInput);
+      document.body.appendChild(form);
+      form.submit();
       
     } catch (error) {
-      console.error('Error al procesar pago:', error);
-      toast.error('Error de conexión al procesar el pago');
-    } finally {
-      setLoading(false);
+      console.error('❌ Error completo:', error);
+      toast.error(error.message || 'Error al procesar el pago');
+      setProcesandoPago(false);
     }
   };
 
@@ -159,7 +184,8 @@ function Carrito() {
       return;
     }
 
-    procesarPago();
+    // Usar la nueva función de Transbank
+    procesarPagoTransbank();
   };
 
   // Función helper para formatear precios
@@ -200,17 +226,7 @@ function Carrito() {
         </Typography>
 
         {cart.length === 0 ? (
-          <Alert 
-            severity="info" 
-            sx={{ 
-              mt: 4, 
-              py: 3,
-              display: 'flex',
-              alignItems: 'center',
-              fontSize: '1.1rem'
-            }}
-          >
-            <ShoppingCart sx={{ mr: 2, fontSize: 30 }} />
+          <Alert severity="info" sx={{ mb: 3 }}>
             Tu carrito está vacío. ¡Agrega algunos productos!
           </Alert>
         ) : (
@@ -221,7 +237,7 @@ function Carrito() {
                 <Card key={item.id} sx={{ mb: 2 }} elevation={2}>
                   <CardContent>
                     <Grid container spacing={2} alignItems="center">
-                      {/* Información del producto */}
+                      {/* ✅ INFORMACIÓN DEL PRODUCTO (SIN IMÁGENES) */}
                       <Grid item xs={12} sm={6}>
                         <Typography variant="h6" gutterBottom>
                           {item.nombre}
@@ -237,7 +253,7 @@ function Carrito() {
                         </Typography>
                       </Grid>
 
-                      {/* Controles de cantidad */}
+                      {/* ✅ CONTROLES DE CANTIDAD */}
                       <Grid item xs={12} sm={3}>
                         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                           <IconButton 
@@ -274,7 +290,7 @@ function Carrito() {
                         </Typography>
                       </Grid>
 
-                      {/* Subtotal y eliminar */}
+                      {/* ✅ SUBTOTAL Y ELIMINAR */}
                       <Grid item xs={12} sm={3}>
                         <Box sx={{ textAlign: 'right' }}>
                           <Typography variant="h6" color="primary" gutterBottom>
@@ -301,6 +317,7 @@ function Carrito() {
                   color="error"
                   onClick={handleClearCart}
                   startIcon={<Delete />}
+                  disabled={procesandoPago}
                 >
                   Vaciar Carrito
                 </Button>
@@ -310,53 +327,44 @@ function Carrito() {
             {/* Resumen del pedido */}
             <Grid item xs={12} md={4}>
               <Paper elevation={3} sx={{ p: 3, position: 'sticky', top: 20 }}>
-                <Typography variant="h6" gutterBottom>
+                <Typography variant="h5" gutterBottom>
                   📋 Resumen del Pedido
                 </Typography>
                 
-                <Divider sx={{ my: 2 }} />
+                <Divider sx={{ mb: 2 }} />
                 
                 <Box sx={{ mb: 2 }}>
-                  <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
-                    <Typography>Productos ({getItemCount()})</Typography>
-                    <Typography>${formatPrice(getTotal())}</Typography>
-                  </Box>
-                  
-                  <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
-                    <Typography>Envío</Typography>
-                    <Typography color="success.main">Gratis</Typography>
-                  </Box>
-                </Box>
-
-                <Divider sx={{ my: 2 }} />
-
-                <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 3 }}>
-                  <Typography variant="h6">Total</Typography>
-                  <Typography variant="h6" color="primary">
-                    ${formatPrice(getTotal())}
+                  <Typography variant="body1">
+                    Productos ({getItemCount()}): ${formatPrice(getTotal())}
+                  </Typography>
+                  <Typography variant="body1">
+                    Envío: Gratis
                   </Typography>
                 </Box>
-
+                
+                <Divider sx={{ mb: 2 }} />
+                
+                <Typography variant="h6" sx={{ mb: 3 }}>
+                  <AttachMoney /> Total: ${formatPrice(getTotal())}
+                </Typography>
+                
                 <Button
                   variant="contained"
                   fullWidth
                   size="large"
-                  startIcon={<AttachMoney />}
                   onClick={handleCheckout}
-                  disabled={loading || cart.length === 0}
-                  sx={{ py: 1.5 }}
+                  disabled={loading || procesandoPago || cart.length === 0}
+                  startIcon={
+                    procesandoPago ? (
+                      <CircularProgress size={20} color="inherit" />
+                    ) : (
+                      <CreditCard />
+                    )
+                  }
+                  sx={{ mb: 2 }}
                 >
-                  {loading ? 'Procesando...' : 'Proceder al Pago'}
+                  {procesandoPago ? 'Procesando...' : 'Pagar con Transbank'}
                 </Button>
-
-                <Typography 
-                  variant="caption" 
-                  display="block" 
-                  sx={{ mt: 2, textAlign: 'center' }}
-                  color="text.secondary"
-                >
-                  Envío gratis en compras sobre $50.000
-                </Typography>
               </Paper>
             </Grid>
           </Grid>

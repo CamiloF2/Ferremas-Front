@@ -23,6 +23,7 @@ import AdminProductos from './AdminProductos';
 import DetalleProducto from './DetalleProducto';
 import Carrito from './Carrito';
 import ConfirmacionPago from './ConfirmacionPago';
+import PagoResultado from './PagoResultado';
 
 const theme = createTheme({
   palette: {
@@ -88,6 +89,14 @@ function App() {
               <PrivateRoute>
                 <Layout>
                   <ConfirmacionPago />
+                </Layout>
+              </PrivateRoute>
+            } />
+            
+            <Route path="/pago-resultado" element={
+              <PrivateRoute>
+                <Layout>
+                  <PagoResultado />
                 </Layout>
               </PrivateRoute>
             } />

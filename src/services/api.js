@@ -120,4 +120,58 @@ export const productoService = {
   }
 };
 
+// ✨ NUEVO: Servicio SOAP
+export const soapService = {
+  // Test SOAP endpoint
+  testSoapEndpoint: async (action, parameter = '') => {
+    try {
+      console.log(`📤 SOAP Test - Action: ${action}, Parameter: ${parameter}`);
+      
+      const payload = {
+        action: action,
+        parameter: parameter
+      };
+      
+      // Llamada directa al endpoint SOAP (no usa el interceptor de /api/)
+      const response = await axios.post('http://localhost:8000/soap/test-frontend/', payload, {
+        headers: {
+          'Content-Type': 'application/json',
+        }
+      });
+      
+      console.log('📥 SOAP Response:', response.data);
+      return response.data;
+      
+    } catch (error) {
+      console.error('❌ Error SOAP:', error);
+      console.error('❌ Error response:', error.response?.data);
+      throw error.response?.data || { 
+        success: false, 
+        error: 'Error al conectar con el servicio SOAP',
+        request_xml: '',
+        response_xml: '',
+        status_code: error.response?.status || 500
+      };
+    }
+  },
+
+  // Métodos específicos para cada acción SOAP
+  consultarProducto: async (productId) => {
+    return await soapService.testSoapEndpoint('consultar_producto', productId.toString());
+  },
+
+  listarProductos: async () => {
+    return await soapService.testSoapEndpoint('listar_productos');
+  },
+
+  consultarOrden: async (ordenId) => {
+    return await soapService.testSoapEndpoint('consultar_orden', ordenId.toString());
+  },
+
+  actualizarStock: async (productId, nuevoStock) => {
+    const parameter = `${productId},${nuevoStock}`;
+    return await soapService.testSoapEndpoint('actualizar_stock', parameter);
+  }
+};
+
 export default api;

@@ -22,7 +22,13 @@ import {
   Home,
   Receipt,
   CreditCard,
-  Schedule
+  Schedule,
+  CreditCardOff,
+  Cancel,
+  TimerOff,
+  BugReport,
+  ContactSupport,
+  Refresh
 } from '@mui/icons-material';
 import { toast } from 'react-toastify';
 import { pagoService } from './services/api';
@@ -106,6 +112,78 @@ function PagoResultado() {
     }
   };
 
+  // ✨ NUEVA FUNCIÓN: Categorizar motivos de rechazo
+  const categorizarMotivo = (motivo) => {
+    if (!motivo) return 'tecnico';
+    
+    const motivoLower = motivo.toLowerCase();
+    
+    if (motivoLower.includes('banco') || motivoLower.includes('rechazado') || motivoLower.includes('declined')) {
+      return 'banco';
+    }
+    if (motivoLower.includes('canceló') || motivoLower.includes('cancelado') || motivoLower.includes('cancelled')) {
+      return 'cancelado';
+    }
+    if (motivoLower.includes('tiempo') || motivoLower.includes('agotado') || motivoLower.includes('timeout') || motivoLower.includes('expired')) {
+      return 'timeout';
+    }
+    if (motivoLower.includes('comunicación') || motivoLower.includes('conexión') || motivoLower.includes('network')) {
+      return 'conexion';
+    }
+    
+    return 'tecnico';
+  };
+
+  // ✨ NUEVA FUNCIÓN: Configuración de categorías de motivos
+  const getMotivoConfig = (motivo) => {
+    const categoria = categorizarMotivo(motivo);
+    
+    const configs = {
+      'banco': {
+        color: 'error',
+        icon: <CreditCardOff sx={{ fontSize: 48 }} />,
+        title: 'Pago Rechazado por el Banco',
+        suggestion: 'Contacta a tu banco o intenta con otra tarjeta',
+        severity: 'error',
+        actions: ['soporte', 'productos']
+      },
+      'cancelado': {
+        color: 'warning', 
+        icon: <Cancel sx={{ fontSize: 48 }} />,
+        title: 'Pago Cancelado',
+        suggestion: 'Puedes intentar el pago nuevamente cuando desees',
+        severity: 'warning',
+        actions: ['reintentar', 'productos']
+      },
+      'timeout': {
+        color: 'info',
+        icon: <TimerOff sx={{ fontSize: 48 }} />,
+        title: 'Tiempo de Pago Agotado',
+        suggestion: 'El tiempo de pago expiró, pero puedes intentar nuevamente',
+        severity: 'info',
+        actions: ['reintentar', 'productos']
+      },
+      'conexion': {
+        color: 'warning',
+        icon: <BugReport sx={{ fontSize: 48 }} />,
+        title: 'Error de Conexión',
+        suggestion: 'Hubo un problema de comunicación, intenta nuevamente',
+        severity: 'warning',
+        actions: ['reintentar', 'soporte']
+      },
+      'tecnico': {
+        color: 'error',
+        icon: <BugReport sx={{ fontSize: 48 }} />,
+        title: 'Error Técnico',
+        suggestion: 'Ocurrió un error inesperado, contacta a soporte técnico',
+        severity: 'error',
+        actions: ['soporte', 'productos']
+      }
+    };
+    
+    return configs[categoria];
+  };
+
   const formatPrice = (price) => {
     return Math.round(parseFloat(price))
       .toString()
@@ -117,31 +195,31 @@ function PagoResultado() {
       'PAGADO': { 
         label: 'Pagado', 
         color: 'success', 
-        icon: <CheckCircle />,
+        icon: <CheckCircle sx={{ fontSize: 60 }} />,
         description: 'Tu pago ha sido procesado exitosamente'
       },
       'AUTHORIZED': { 
         label: 'Autorizado', 
         color: 'success', 
-        icon: <CheckCircle />,
+        icon: <CheckCircle sx={{ fontSize: 60 }} />,
         description: 'Tu pago ha sido autorizado correctamente'
       },
       'FAILED': { 
         label: 'Fallido', 
         color: 'error', 
-        icon: <Error />,
+        icon: <Error sx={{ fontSize: 60 }} />,
         description: 'El pago no pudo ser procesado'
       },
       'CANCELLED': { 
         label: 'Cancelado', 
         color: 'warning', 
-        icon: <Error />,
+        icon: <Error sx={{ fontSize: 60 }} />,
         description: 'El pago fue cancelado'
       },
       'PENDING': { 
         label: 'Pendiente', 
         color: 'info', 
-        icon: <Schedule />,
+        icon: <Schedule sx={{ fontSize: 60 }} />,
         description: 'El pago está siendo procesado'
       }
     };
@@ -149,9 +227,58 @@ function PagoResultado() {
     return estados[estado] || { 
       label: estado || 'Desconocido', 
       color: 'default', 
-      icon: <Schedule />,
+      icon: <Schedule sx={{ fontSize: 60 }} />,
       description: 'Estado del pago desconocido'
     };
+  };
+
+  // ✨ NUEVA FUNCIÓN: Botones de acción según el motivo
+  const renderActionButtons = (motivoConfig) => {
+    const buttons = [];
+    
+    if (motivoConfig.actions.includes('reintentar')) {
+      buttons.push(
+        <Button 
+          key="reintentar"
+          variant="contained" 
+          onClick={() => navigate('/carrito')}
+          startIcon={<Refresh />}
+          size="large"
+          color="primary"
+        >
+          Intentar Nuevamente
+        </Button>
+      );
+    }
+    
+    if (motivoConfig.actions.includes('soporte')) {
+      buttons.push(
+        <Button 
+          key="soporte"
+          variant="outlined" 
+          onClick={() => toast.info('📞 Contacta soporte: soporte@ferremas.com')}
+          startIcon={<ContactSupport />}
+          size="large"
+          color="error"
+        >
+          Contactar Soporte
+        </Button>
+      );
+    }
+    
+    buttons.push(
+      <Button 
+        key="productos"
+        variant={buttons.length === 0 ? "contained" : "text"}
+        onClick={() => navigate('/productos')}
+        startIcon={<Home />}
+        size="large"
+      >
+        Volver a Productos
+      </Button>
+    );
+    
+    return buttons;
   };
 
   if (loading) {
@@ -204,27 +331,70 @@ function PagoResultado() {
 
   const estadoInfo = getEstadoDisplay(estadoPago);
   const esExitoso = estadoPago === 'PAGADO' || estadoPago === 'AUTHORIZED';
+  
+  // ✨ OBTENER CONFIGURACIÓN DEL MOTIVO DE RECHAZO
+  const motivoRechazo = ordenData?.motivo_rechazo;
+  const motivoConfig = !esExitoso ? getMotivoConfig(motivoRechazo) : null;
 
   return (
     <Container maxWidth="md" sx={{ mt: 4, mb: 4 }}>
       <Paper elevation={3} sx={{ p: 4 }}>
         {/* Header del resultado */}
         <Box sx={{ textAlign: 'center', mb: 4 }}>
-          <Box sx={{ mb: 2, color: esExitoso ? 'success.main' : 'error.main' }}>
-            {estadoInfo.icon}
-          </Box>
-          <Typography variant="h4" gutterBottom>
-            {esExitoso ? '¡Pago Exitoso!' : 'Pago No Procesado'}
-          </Typography>
-          <Chip 
-            label={estadoInfo.label}
-            color={estadoInfo.color}
-            size="large"
-            sx={{ mb: 2 }}
-          />
-          <Typography variant="body1" color="text.secondary">
-            {estadoInfo.description}
-          </Typography>
+          {esExitoso ? (
+            // ✅ PAGO EXITOSO
+            <>
+              <Box sx={{ mb: 2, color: 'success.main' }}>
+                {estadoInfo.icon}
+              </Box>
+              <Typography variant="h4" gutterBottom color="success.main">
+                ¡Pago Exitoso!
+              </Typography>
+              <Chip 
+                label={estadoInfo.label}
+                color="success"
+                size="large"
+                sx={{ mb: 2 }}
+              />
+              <Typography variant="body1" color="text.secondary">
+                {estadoInfo.description}
+              </Typography>
+            </>
+          ) : (
+            // ❌ PAGO RECHAZADO - CON MOTIVO ESPECÍFICO
+            <>
+              <Box sx={{ mb: 2, color: `${motivoConfig.color}.main` }}>
+                {motivoConfig.icon}
+              </Box>
+              <Typography variant="h4" gutterBottom color={`${motivoConfig.color}.main`}>
+                {motivoConfig.title}
+              </Typography>
+              
+              {/* ✨ MOTIVO ESPECÍFICO DEL RECHAZO */}
+              <Alert severity={motivoConfig.severity} sx={{ mb: 3, textAlign: 'left' }}>
+                <Box>
+                  <Typography variant="body1" fontWeight="bold" gutterBottom>
+                    {motivoRechazo || 'Error desconocido'}
+                  </Typography>
+                  <Typography variant="body2">
+                    💡 {motivoConfig.suggestion}
+                  </Typography>
+                </Box>
+              </Alert>
+
+              <Box sx={{ display: 'flex', gap: 1, justifyContent: 'center', flexWrap: 'wrap', mb: 2 }}>
+                <Chip 
+                  label={`Estado: ${estadoInfo.label}`} 
+                  color={motivoConfig.color}
+                />
+                <Chip 
+                  label={`Categoría: ${motivoConfig.title.split(' ')[1] || 'Error'}`}
+                  variant="outlined"
+                  color={motivoConfig.color}
+                />
+              </Box>
+            </>
+          )}
         </Box>
 
         <Divider sx={{ mb: 3 }} />
@@ -247,7 +417,7 @@ function PagoResultado() {
             
             <Grid item xs={12} sm={6}>
               <Typography variant="body2" color="text.secondary">
-                Fecha:
+                Fecha del Intento:
               </Typography>
               <Typography variant="body1">
                 {new Date().toLocaleDateString('es-ES', {
@@ -263,7 +433,7 @@ function PagoResultado() {
             {ordenData?.total && (
               <Grid item xs={12} sm={6}>
                 <Typography variant="body2" color="text.secondary">
-                  Total Pagado:
+                  {esExitoso ? 'Total Pagado:' : 'Monto del Intento:'}
                 </Typography>
                 <Typography variant="h6" color="primary">
                   ${formatPrice(ordenData.total)}
@@ -280,6 +450,18 @@ function PagoResultado() {
                 Transbank Webpay
               </Typography>
             </Grid>
+
+            {/* ✨ MOSTRAR CÓDIGO DE RESPUESTA SI ESTÁ DISPONIBLE */}
+            {ordenData?.codigo_respuesta && (
+              <Grid item xs={12} sm={6}>
+                <Typography variant="body2" color="text.secondary">
+                  Código de Respuesta:
+                </Typography>
+                <Typography variant="body1" fontFamily="monospace">
+                  {ordenData.codigo_respuesta}
+                </Typography>
+              </Grid>
+            )}
           </Grid>
 
           {/* Lista de productos si está disponible */}
@@ -310,42 +492,47 @@ function PagoResultado() {
           <Alert severity="success" sx={{ mb: 3 }}>
             <Typography variant="body2">
               <strong>¡Felicidades!</strong> Tu pago ha sido procesado exitosamente. 
-              Gracias por tu compra en Ferremas.
+              Recibirás un comprobante por email. Gracias por tu compra en Ferremas.
             </Typography>
           </Alert>
         )}
 
-        {!esExitoso && (
-          <Alert severity="error" sx={{ mb: 3 }}>
-            <Typography variant="body2">
-              El pago no pudo ser procesado. Por favor, intenta nuevamente o 
-              contacta con nuestro soporte si el problema persiste.
-            </Typography>
-          </Alert>
-        )}
-
-        {/* Botones de acción */}
-        <Box sx={{ display: 'flex', gap: 2, justifyContent: 'center', flexWrap: 'wrap' }}>
-          <Button 
-            variant="contained" 
-            onClick={() => navigate('/productos')}
-            startIcon={<Home />}
-            size="large"
-          >
-            Seguir Comprando
-          </Button>
-          
-          {!esExitoso && (
+        {/* ✨ BOTONES DE ACCIÓN ESPECÍFICOS SEGÚN EL MOTIVO */}
+        <Box sx={{ 
+          display: 'flex', 
+          gap: 2, 
+          justifyContent: 'center', 
+          flexWrap: 'wrap',
+          mt: 3 
+        }}>
+          {esExitoso ? (
             <Button 
-              variant="outlined" 
-              onClick={() => navigate('/carrito')}
-              startIcon={<ShoppingBag />}
+              variant="contained" 
+              onClick={() => navigate('/productos')}
+              startIcon={<Home />}
               size="large"
             >
-              Volver al Carrito
+              Seguir Comprando
             </Button>
+          ) : (
+            renderActionButtons(motivoConfig)
           )}
         </Box>
+
+        {/* ✨ INFORMACIÓN ADICIONAL PARA PAGOS RECHAZADOS */}
+        {!esExitoso && (
+          <Box sx={{ mt: 4, p: 2, backgroundColor: 'grey.50', borderRadius: 1 }}>
+            <Typography variant="subtitle2" gutterBottom color="text.secondary">
+              ℹ️ Información Útil:
+            </Typography>
+            <Typography variant="body2" color="text.secondary">
+              • Guarda el número de orden para futuras consultas<br/>
+              • Si el problema persiste, contacta a tu banco<br/>
+              • Puedes intentar con otra tarjeta o método de pago<br/>
+              • Tu carrito se mantiene guardado para reintentarlo
+            </Typography>
+          </Box>
+        )}
       </Paper>
     </Container>
   );

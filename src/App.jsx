@@ -25,6 +25,7 @@ import Carrito from './Carrito';
 import ConfirmacionPago from './ConfirmacionPago';
 import PagoResultado from './PagoResultado';
 import PagoRechazado from './PagoRechazado';
+import SOAPDemo from './SOAPDemo';
 
 const theme = createTheme({
   palette: {
@@ -83,6 +84,12 @@ function App() {
                 <Layout>
                   <AdminProductos />
                 </Layout>
+              </PrivateRoute>
+            } />
+            
+            <Route path="/soap-demo" element={
+              <PrivateRoute>
+                <SOAPDemo />
               </PrivateRoute>
             } />
             

@@ -8,7 +8,7 @@ import {
   Box,
   Badge
 } from '@mui/material';
-import { Logout } from '@mui/icons-material';
+import { Logout, Science } from '@mui/icons-material';
 import { useCart } from '../context/CartContext';
 import { toast } from 'react-toastify';
 
@@ -87,6 +87,19 @@ const Layout = ({ children }) => {
                   sx={{ ml: 1 }}
                 />
               )}
+            </Button>
+
+            <Button
+              color="inherit"
+              onClick={() => navegarA('/soap-demo')}
+              startIcon={<Science />}
+              sx={{
+                fontWeight: isActive('/soap-demo') ? 'bold' : 'normal',
+                backgroundColor: isActive('/soap-demo') ? 'rgba(255,255,255,0.1)' : 'transparent',
+                '&:hover': { backgroundColor: 'rgba(255,255,255,0.2)' }
+              }}
+            >
+              SOAP Demo
             </Button>
 
             {usuario?.tipo === 'admin' && (

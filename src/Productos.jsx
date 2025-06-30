@@ -84,10 +84,6 @@ function Productos() {
   return (
     <Container maxWidth="lg" sx={{ mt: 4, mb: 4 }}>
       <Box sx={{ mb: 4, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <Typography variant="h4" component="h1">
-          Catálogo de Productos
-        </Typography>
-        
         <FormControl sx={{ minWidth: 200 }}>
           <InputLabel id="categoria-select-label">Filtrar por categoría</InputLabel>
           <Select
@@ -106,6 +102,10 @@ function Productos() {
             ))}
           </Select>
         </FormControl>
+        
+        <Typography variant="h4" component="h1">
+          Catálogo de Productos
+        </Typography>
       </Box>
 
       {loading && (

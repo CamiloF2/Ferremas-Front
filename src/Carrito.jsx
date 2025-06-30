@@ -22,7 +22,6 @@ import {
   Add,
   Remove,
   Delete,
-  ShoppingCart,
   Logout,
   AttachMoney,
   CreditCard
@@ -41,7 +40,7 @@ function Carrito() {
     getTotal, 
     getItemCount 
   } = useCart();
-  const [loading, setLoading] = useState(false);
+  const [loading] = useState(false);
   const [procesandoPago, setProcesandoPago] = useState(false);
 
   const handleVolver = () => {
@@ -122,7 +121,7 @@ function Carrito() {
         throw new Error(ordenResponse.error || 'Error al crear la orden');
       }
 
-      const ordenId = ordenResponse.orden.id;  // ✅ ARREGLAR: Usar ordenResponse.orden.id
+      const ordenId = ordenResponse.orden.id;
       
       // Paso 2: Iniciar pago con Transbank
       toast.info('💳 Iniciando pago con Transbank...');

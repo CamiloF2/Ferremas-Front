@@ -24,6 +24,7 @@ import DetalleProducto from './DetalleProducto';
 import Carrito from './Carrito';
 import ConfirmacionPago from './ConfirmacionPago';
 import PagoResultado from './PagoResultado';
+import PagoRechazado from './PagoRechazado';
 
 const theme = createTheme({
   palette: {
@@ -97,6 +98,14 @@ function App() {
               <PrivateRoute>
                 <Layout>
                   <PagoResultado />
+                </Layout>
+              </PrivateRoute>
+            } />
+            
+            <Route path="/pago-rechazado" element={
+              <PrivateRoute>
+                <Layout>
+                  <PagoRechazado />
                 </Layout>
               </PrivateRoute>
             } />
